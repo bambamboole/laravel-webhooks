@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bambamboole\LaravelWebhooks;
 
 use Bambamboole\LaravelWebhooks\Models\WebhookDelivery;
+use Spatie\WebhookServer\Events\FinalWebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallEvent;
 use Spatie\WebhookServer\Events\WebhookCallSucceededEvent;
 
@@ -15,6 +16,17 @@ final class RecordWebhookDelivery
         // Calls without our meta were dispatched through spatie directly,
         // not by this package — leave those alone.
         if (! isset($event->meta['event'])) {
+            return;
+        }
+
+        // Spatie fires this in addition to the regular failed event for the
+        // same attempt, so flip that row instead of inserting a duplicate.
+        if ($event instanceof FinalWebhookCallFailedEvent) {
+            WebhookDelivery::query()
+                ->where('call_uuid', $event->uuid)
+                ->where('attempt', $event->attempt)
+                ->update(['status' => WebhookDelivery::STATUS_FINAL_FAILED]);
+
             return;
         }
 

@@ -7,6 +7,7 @@ use Bambamboole\LaravelWebhooks\Models\WebhookSubscription as SubscriptionModel;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Psr7\Response;
+use Spatie\WebhookServer\Events\FinalWebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallEvent;
 use Spatie\WebhookServer\Events\WebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallSucceededEvent;
@@ -68,6 +69,24 @@ it('records failed webhook calls without a response', function (): void {
     ]));
 
     expect(WebhookDelivery::sole()->response_status)->toBeNull();
+});
+
+it('marks the last failed delivery as final failed when retries are exhausted', function (): void {
+    event(webhookCallEvent(WebhookCallFailedEvent::class, [
+        'attempt' => 3,
+        'errorType' => ServerException::class,
+        'errorMessage' => 'Server error: 500',
+    ]));
+    event(webhookCallEvent(FinalWebhookCallFailedEvent::class, [
+        'attempt' => 3,
+        'errorType' => ServerException::class,
+        'errorMessage' => 'Server error: 500',
+    ]));
+
+    $delivery = WebhookDelivery::sole();
+
+    expect($delivery->status)->toBe(WebhookDelivery::STATUS_FINAL_FAILED)
+        ->and($delivery->attempt)->toBe(3);
 });
 
 it('ignores spatie webhook calls not dispatched by this package', function (): void {

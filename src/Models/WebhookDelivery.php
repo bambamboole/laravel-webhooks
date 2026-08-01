@@ -30,6 +30,8 @@ class WebhookDelivery extends Model
 
     public const string STATUS_FAILED = 'failed';
 
+    public const string STATUS_FINAL_FAILED = 'final_failed';
+
     protected $guarded = [];
 
     /**

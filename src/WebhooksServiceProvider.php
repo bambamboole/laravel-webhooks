@@ -8,6 +8,7 @@ use Bambamboole\LaravelWebhooks\Support\ClassDiscoverer;
 use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\WebhookServer\Events\FinalWebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallSucceededEvent;
 
@@ -36,6 +37,7 @@ class WebhooksServiceProvider extends PackageServiceProvider
     {
         Event::listen(WebhookCallSucceededEvent::class, RecordWebhookDelivery::class);
         Event::listen(WebhookCallFailedEvent::class, RecordWebhookDelivery::class);
+        Event::listen(FinalWebhookCallFailedEvent::class, RecordWebhookDelivery::class);
 
         if (config('webhooks.auto_listen', true)) {
             foreach ($this->app->make(WebhookEventRegistry::class)->all() as $definition) {

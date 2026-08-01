@@ -140,7 +140,8 @@ attacks (`webhooks.dispatcher.use_timestamp`).
 ## Delivery log
 
 Every call attempt is recorded in the `webhook_deliveries` table (UUIDv7 keys): event name, url, payload, attempt,
-succeeded/failed status, HTTP response status, and error details. Retries of the same call share a `call_uuid`.
+status, HTTP response status, and error details. Retries of the same call share a `call_uuid`. The status is
+`succeeded`, `failed` (a retry follows), or `final_failed` (retries exhausted).
 
 ```php
 use Bambamboole\LaravelWebhooks\Models\WebhookDelivery;
