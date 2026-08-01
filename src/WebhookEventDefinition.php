@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Bambamboole\LaravelWebhooks;
 
-use Bambamboole\LaravelWebhooks\Attributes\WebhookEvent;
-
 final readonly class WebhookEventDefinition
 {
     /**
@@ -19,6 +17,5 @@ final readonly class WebhookEventDefinition
         public ?string $summary,
         public ?string $description,
         public array $tags,
-        public WebhookEvent $attribute,
     ) {}
 }

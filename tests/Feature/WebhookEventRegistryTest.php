@@ -27,8 +27,7 @@ it('discovers webhook event definitions sorted by event name', function (): void
         ->and($paid->title)->toBe('Invoice Paid')
         ->and($paid->summary)->toBe('Sent when an invoice is paid.')
         ->and($paid->description)->toBe('Customers can subscribe to this webhook to react to paid invoices.')
-        ->and($paid->tags)->toBe(['billing'])
-        ->and($paid->attribute->name)->toBe('invoice.paid');
+        ->and($paid->tags)->toBe(['billing']);
 
     expect($refunded->class)->toBe(InvoiceRefundedWebhook::class)
         ->and($refunded->title)->toBe('Invoice Refunded')

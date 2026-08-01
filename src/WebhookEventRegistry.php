@@ -68,7 +68,6 @@ final class WebhookEventRegistry
                 summary: $attribute->summary,
                 description: $attribute->description,
                 tags: $attribute->tags,
-                attribute: $attribute,
             );
         }
 

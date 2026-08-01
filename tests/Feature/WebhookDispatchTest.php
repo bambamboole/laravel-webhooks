@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Bambamboole\LaravelWebhooks\Attributes\WebhookEvent;
 use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
 use Bambamboole\LaravelWebhooks\Tests\Fixtures\Webhooks\InvoicePaidWebhook;
 use Bambamboole\LaravelWebhooks\WebhookEventDefinition;
@@ -156,7 +155,6 @@ function webhookDefinitionFor(string $name, string $class): WebhookEventDefiniti
         summary: null,
         description: null,
         tags: [],
-        attribute: new WebhookEvent(name: $name),
     );
 }
 
