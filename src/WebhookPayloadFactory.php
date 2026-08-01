@@ -10,7 +10,10 @@ use RuntimeException;
 
 final readonly class WebhookPayloadFactory
 {
-    public function make(WebhookEventDefinition $definition, object $event): WebhookPayload
+    /**
+     * @return array{id: string, event: string, createdAt: string, data: array<mixed>}
+     */
+    public function make(WebhookEventDefinition $definition, object $event): array
     {
         $payloadMethod = 'webhookPayload';
         $eventClass = $event::class;
@@ -36,17 +39,11 @@ final readonly class WebhookPayloadFactory
             throw new RuntimeException("Webhook payload method [{$payloadMethod}] on [{$eventClass}] must return an array");
         }
 
-        $id = (string) Str::uuid();
-
-        return new WebhookPayload(
-            id: $id,
-            event: $definition->name,
-            body: [
-                'id' => $id,
-                'event' => $definition->name,
-                'createdAt' => now()->toISOString(),
-                'data' => $data,
-            ],
-        );
+        return [
+            'id' => (string) Str::uuid(),
+            'event' => $definition->name,
+            'createdAt' => now()->toISOString(),
+            'data' => $data,
+        ];
     }
 }

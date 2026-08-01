@@ -26,10 +26,9 @@ it('builds a stable envelope for an invoice paid webhook', function (): void {
         new InvoicePaidWebhook(invoiceId: 987, amount: 6500),
     );
 
-    expect(Str::isUuid($payload->id))->toBeTrue()
-        ->and($payload->event)->toBe('invoice.paid')
-        ->and($payload->body)->toEqual([
-            'id' => $payload->id,
+    expect(Str::isUuid($payload['id']))->toBeTrue()
+        ->and($payload)->toEqual([
+            'id' => $payload['id'],
             'event' => 'invoice.paid',
             'createdAt' => '2026-07-03T12:34:56.000000Z',
             'data' => [

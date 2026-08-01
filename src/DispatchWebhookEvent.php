@@ -34,12 +34,12 @@ final readonly class DispatchWebhookEvent
 
             $call = WebhookCall::create()
                 ->url($subscription->url)
-                ->payload($payload->body)
+                ->payload($payload)
                 ->withHeaders($subscription->headers)
                 ->meta([
                     'event' => $definition->name,
                     'subscription_id' => $subscription->id,
-                    'payload_id' => $payload->id,
+                    'payload_id' => $payload['id'],
                 ]);
 
             if ($subscription->secret !== null) {
