@@ -6,6 +6,7 @@ use Bambamboole\LaravelWebhooks\Attributes\WebhookEvent;
 use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
 use Bambamboole\LaravelWebhooks\Tests\Fixtures\Webhooks\InvoicePaidWebhook;
 use Bambamboole\LaravelWebhooks\WebhookEventDefinition;
+use Bambamboole\LaravelWebhooks\WebhookEventRegistry;
 use Bambamboole\LaravelWebhooks\WebhookPayloadFactory;
 use Bambamboole\LaravelWebhooks\WebhookSubscription;
 use Bambamboole\LaravelWebhooks\WebhookSubscriptionRepository;
@@ -42,6 +43,7 @@ it('builds a stable envelope for an invoice paid webhook', function (): void {
 it('dispatches documented webhook events through spatie', function (): void {
     Bus::fake();
     config()->set('webhooks.scan_paths', [dirname(__DIR__).'/Fixtures/Webhooks']);
+    app()->forgetInstance(WebhookEventRegistry::class);
 
     app()->bind(WebhookSubscriptionRepository::class, RecordingWebhookSubscriptionRepository::class);
 
@@ -79,6 +81,7 @@ it('dispatches documented webhook events through spatie', function (): void {
 it('ignores events that are not documented webhooks', function (): void {
     Bus::fake();
     config()->set('webhooks.scan_paths', [dirname(__DIR__).'/Fixtures/Webhooks']);
+    app()->forgetInstance(WebhookEventRegistry::class);
 
     app(DispatchWebhookEvent::class)->handle(new UndocumentedWebhookEvent);
 
@@ -88,6 +91,7 @@ it('ignores events that are not documented webhooks', function (): void {
 it('throws a useful runtime exception when a repository yields invalid subscriptions', function (): void {
     Bus::fake();
     config()->set('webhooks.scan_paths', [dirname(__DIR__).'/Fixtures/Webhooks']);
+    app()->forgetInstance(WebhookEventRegistry::class);
 
     app()->bind(WebhookSubscriptionRepository::class, InvalidWebhookSubscriptionRepository::class);
 

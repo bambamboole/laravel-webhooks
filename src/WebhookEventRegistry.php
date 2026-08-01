@@ -12,9 +12,9 @@ use ReflectionClass;
 final class WebhookEventRegistry
 {
     /**
-     * @var array<class-string, WebhookEventDefinition>|null
+     * @var list<WebhookEventDefinition>|null
      */
-    private ?array $defaultDefinitionsByClass = null;
+    private ?array $definitions = null;
 
     public function __construct(
         private readonly ClassDiscoverer $classes,
@@ -25,19 +25,24 @@ final class WebhookEventRegistry
      */
     public function forClass(string $class): ?WebhookEventDefinition
     {
-        return $this->defaultDefinitionsByClass()[$class] ?? null;
+        return array_find(
+            $this->all(),
+            fn (WebhookEventDefinition $definition): bool => $definition->class === $class,
+        );
     }
 
     /**
-     * @param  list<string>|null  $scanPaths
      * @return list<WebhookEventDefinition>
      */
-    public function all(?array $scanPaths = null): array
+    public function all(): array
     {
-        $definitions = [];
-        $scanPaths ??= $this->scanPaths();
+        if ($this->definitions !== null) {
+            return $this->definitions;
+        }
 
-        foreach ($this->classes->classesIn($scanPaths) as $class) {
+        $definitions = [];
+
+        foreach ($this->classes->classesIn($this->scanPaths()) as $class) {
             $reflection = new ReflectionClass($class);
 
             if (! $reflection->isInstantiable()) {
@@ -69,25 +74,7 @@ final class WebhookEventRegistry
 
         ksort($definitions);
 
-        return array_values($definitions);
-    }
-
-    /**
-     * @return array<class-string, WebhookEventDefinition>
-     */
-    private function defaultDefinitionsByClass(): array
-    {
-        if ($this->defaultDefinitionsByClass !== null) {
-            return $this->defaultDefinitionsByClass;
-        }
-
-        $definitions = [];
-
-        foreach ($this->all() as $definition) {
-            $definitions[$definition->class] = $definition;
-        }
-
-        return $this->defaultDefinitionsByClass = $definitions;
+        return $this->definitions = array_values($definitions);
     }
 
     /**
