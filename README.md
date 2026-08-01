@@ -116,7 +116,15 @@ final class CustomWebhookSubscriptionRepository implements WebhookSubscriptionRe
 
 ## Dispatching
 
-Register `DispatchWebhookEvent` as a listener for the event classes you want delivered:
+Webhook event classes are regular Laravel events — fire them and the package delivers them. Listeners for every
+discovered `#[WebhookEvent]` class are registered automatically:
+
+```php
+event(new InvoicePaid(invoiceId: 987, amount: 6500));
+```
+
+Discovery scans the configured paths at every boot. If that cost matters to you, set `webhooks.auto_listen` to
+`false` and wire the dispatcher yourself:
 
 ```php
 use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;

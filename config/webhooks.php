@@ -9,6 +9,12 @@ return [
         app_path('Events'),
     ],
 
+    // Automatically register DispatchWebhookEvent as a listener for every
+    // discovered webhook event class. Discovery scans the paths above at
+    // every boot; disable this and wire listeners manually if boot cost
+    // matters.
+    'auto_listen' => true,
+
     'dispatcher' => [
         // Sign calls with a timestamp to protect receivers against replay
         // attacks (requires spatie/laravel-webhook-server ^3.10).

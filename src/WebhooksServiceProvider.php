@@ -36,5 +36,11 @@ class WebhooksServiceProvider extends PackageServiceProvider
     {
         Event::listen(WebhookCallSucceededEvent::class, RecordWebhookDelivery::class);
         Event::listen(WebhookCallFailedEvent::class, RecordWebhookDelivery::class);
+
+        if (config('webhooks.auto_listen', true)) {
+            foreach ($this->app->make(WebhookEventRegistry::class)->all() as $definition) {
+                Event::listen($definition->class, DispatchWebhookEvent::class);
+            }
+        }
     }
 }
