@@ -1,0 +1,11 @@
+#!/bin/sh
+# Full CI-equivalent gate. Bypass with `git push --no-verify` (emergencies only — never push on red).
+set -e
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root"
+
+echo "▶ pre-push: composer check (pint, phpstan, rector, pest)"
+composer check
+
+echo "✓ pre-push gate passed"

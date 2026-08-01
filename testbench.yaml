@@ -1,0 +1,15 @@
+laravel: '@testbench'
+
+providers:
+  - Bambamboole\LaravelWebhooks\WebhooksServiceProvider
+  - Workbench\App\Providers\WorkbenchServiceProvider
+
+workbench:
+  start: '/'
+  welcome: false
+  discovers:
+    web: true
+  build:
+    - create-sqlite-db
+    - migrate:fresh:
+        --force: true

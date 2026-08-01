@@ -1,0 +1,146 @@
+# Laravel Webhooks
+
+Attribute-driven outgoing webhooks for Laravel: annotate event classes, manage subscriptions in the database, and
+deliver signed payloads through [spatie/laravel-webhook-server](https://github.com/spatie/laravel-webhook-server).
+
+## Installation
+
+```bash
+composer require bambamboole/laravel-webhooks
+```
+
+Delivery uses `spatie/laravel-webhook-server` (^3.10), which is not installed automatically:
+
+```bash
+composer require spatie/laravel-webhook-server
+```
+
+The `webhook_subscriptions` migration runs automatically. Publish the config if you need to change defaults:
+
+```bash
+php artisan vendor:publish --tag=laravel-webhooks-config
+```
+
+## Defining webhook events
+
+Annotate any class with `#[WebhookEvent]` and give it a payload method. By default the package scans `app/Events`;
+adjust `webhooks.scan_paths` in the config to change that.
+
+```php
+use Bambamboole\LaravelWebhooks\Attributes\WebhookEvent;
+
+#[WebhookEvent(
+    name: 'invoice.paid',
+    title: 'Invoice paid',
+    summary: 'Sent when an invoice is paid.',
+    tags: ['billing'],
+)]
+final class InvoicePaid
+{
+    public function __construct(public int $invoiceId, public int $amount) {}
+
+    /**
+     * @return array{invoiceId:int, amount:int}
+     */
+    public function webhookPayload(): array
+    {
+        return [
+            'invoiceId' => $this->invoiceId,
+            'amount' => $this->amount,
+        ];
+    }
+}
+```
+
+Every delivery wraps the payload in a stable envelope:
+
+```json
+{
+    "id": "9d3c…",
+    "event": "invoice.paid",
+    "createdAt": "2026-07-03T12:34:56.000000Z",
+    "data": {
+        "invoiceId": 987,
+        "amount": 6500
+    }
+}
+```
+
+`WebhookEventRegistry::all()` returns the discovered definitions, which an app can use to power its own webhook
+setup UI:
+
+```php
+use Bambamboole\LaravelWebhooks\WebhookEventRegistry;
+
+$events = collect(app(WebhookEventRegistry::class)->all())
+    ->map(fn ($event) => [
+        'name' => $event->name,
+        'title' => $event->title,
+        'summary' => $event->summary,
+    ]);
+```
+
+## Managing subscriptions
+
+Subscriptions live in the `webhook_subscriptions` table via the shipped Eloquent model. `events` holds the subscribed
+event names; `'*'` subscribes to everything. Secrets are encrypted at rest and used to sign deliveries.
+
+```php
+use Bambamboole\LaravelWebhooks\Models\WebhookSubscription;
+
+WebhookSubscription::create([
+    'name' => 'Billing system',
+    'url' => 'https://example.com/webhooks',
+    'secret' => 'signing-secret',
+    'headers' => ['X-Tenant' => 'acme'],
+    'events' => ['invoice.paid', 'invoice.refunded'],
+]);
+```
+
+To source subscriptions from somewhere else, bind your own repository — the database repository is only a default
+(`bindIf`):
+
+```php
+use Bambamboole\LaravelWebhooks\WebhookSubscription;
+use Bambamboole\LaravelWebhooks\WebhookSubscriptionRepository;
+
+final class CustomWebhookSubscriptionRepository implements WebhookSubscriptionRepository
+{
+    public function forEvent(string $eventName, object $event): iterable
+    {
+        yield new WebhookSubscription(
+            url: 'https://example.com/webhooks',
+            secret: 'signing-secret',
+            headers: ['X-Webhook-Source' => 'app'],
+            id: 'subscription-123',
+        );
+    }
+}
+```
+
+## Dispatching
+
+Register `DispatchWebhookEvent` as a listener for the event classes you want delivered:
+
+```php
+use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
+use Illuminate\Support\Facades\Event;
+
+Event::listen(InvoicePaid::class, DispatchWebhookEvent::class);
+```
+
+Each active subscription for the event receives one signed call through spatie's queue-backed webhook server. Calls
+are signed with the subscription secret (unsigned when no secret is set) and include a timestamp against replay
+attacks (`webhooks.dispatcher.use_timestamp`).
+
+## Development
+
+```bash
+composer test    # pest
+composer check   # pint + phpstan + rector + pest
+composer serve   # workbench app
+```
+
+## License
+
+[MIT](LICENSE.md)
