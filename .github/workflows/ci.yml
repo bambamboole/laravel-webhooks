@@ -8,8 +8,13 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dependencies: [highest, lowest]
+    name: check (${{ matrix.dependencies }})
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -17,5 +22,10 @@ jobs:
           coverage: none
 
       - uses: ramsey/composer-install@v3
+        with:
+          dependency-versions: ${{ matrix.dependencies }}
 
-      - run: composer check
+      # The lowest leg verifies the runtime constraint claims, so it runs the
+      # test suite only — lint and static analysis are pinned to the tool
+      # versions we develop with and run on the highest leg.
+      - run: composer ${{ matrix.dependencies == 'lowest' && 'test' || 'check' }}
