@@ -116,18 +116,18 @@ it('throws a useful runtime exception when the payload method is handled by magi
         ->toThrow(RuntimeException::class, 'Webhook payload method [webhookPayload] is missing on [MagicPayloadMethodWebhook]');
 });
 
-it('throws a useful runtime exception when the payload method is not public', function (): void {
+it('fails with a native error when the payload method is not public', function (): void {
     $definition = webhookDefinitionFor('invoice.private', PrivatePayloadMethodWebhook::class);
 
     expect(fn () => app(WebhookPayloadFactory::class)->make($definition, new PrivatePayloadMethodWebhook))
-        ->toThrow(RuntimeException::class, 'Webhook payload method [webhookPayload] on [PrivatePayloadMethodWebhook] must be public');
+        ->toThrow(Error::class);
 });
 
-it('throws a useful runtime exception when the payload method requires parameters', function (): void {
+it('fails with a native error when the payload method requires parameters', function (): void {
     $definition = webhookDefinitionFor('invoice.parameters', RequiredParameterPayloadWebhook::class);
 
     expect(fn () => app(WebhookPayloadFactory::class)->make($definition, new RequiredParameterPayloadWebhook))
-        ->toThrow(RuntimeException::class, 'Webhook payload method [webhookPayload] on [RequiredParameterPayloadWebhook] must have zero required parameters');
+        ->toThrow(ArgumentCountError::class);
 });
 
 it('throws a useful runtime exception when the payload method does not return an array', function (): void {
