@@ -105,10 +105,10 @@ it('throws a useful runtime exception when a repository yields invalid subscript
 });
 
 it('throws a useful runtime exception when the payload method is missing', function (): void {
-    $definition = webhookDefinitionFor('invoice.missing', MissingPayloadMethodWebhook::class, payloadMethod: 'missingPayload');
+    $definition = webhookDefinitionFor('invoice.missing', MissingPayloadMethodWebhook::class);
 
     expect(fn () => app(WebhookPayloadFactory::class)->make($definition, new MissingPayloadMethodWebhook))
-        ->toThrow(RuntimeException::class, 'Webhook payload method [missingPayload] is missing on [MissingPayloadMethodWebhook]');
+        ->toThrow(RuntimeException::class, 'Webhook payload method [webhookPayload] is missing on [MissingPayloadMethodWebhook]');
 });
 
 it('throws a useful runtime exception when the payload method is handled by magic call', function (): void {
@@ -147,7 +147,7 @@ function invoicePaidWebhookDefinition(): WebhookEventDefinition
 /**
  * @param  class-string  $class
  */
-function webhookDefinitionFor(string $name, string $class, string $payloadMethod = 'webhookPayload'): WebhookEventDefinition
+function webhookDefinitionFor(string $name, string $class): WebhookEventDefinition
 {
     return new WebhookEventDefinition(
         name: $name,
@@ -156,7 +156,7 @@ function webhookDefinitionFor(string $name, string $class, string $payloadMethod
         summary: null,
         description: null,
         tags: [],
-        attribute: new WebhookEvent(name: $name, payloadMethod: $payloadMethod),
+        attribute: new WebhookEvent(name: $name),
     );
 }
 

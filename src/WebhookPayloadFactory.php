@@ -12,7 +12,7 @@ final readonly class WebhookPayloadFactory
 {
     public function make(WebhookEventDefinition $definition, object $event): WebhookPayload
     {
-        $payloadMethod = $definition->attribute->payloadMethod;
+        $payloadMethod = 'webhookPayload';
         $eventClass = $event::class;
         $reflection = new ReflectionClass($event);
 
