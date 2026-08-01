@@ -9,13 +9,9 @@ deliver signed payloads through [spatie/laravel-webhook-server](https://github.c
 composer require bambamboole/laravel-webhooks
 ```
 
-Delivery uses `spatie/laravel-webhook-server` (^3.10), which is not installed automatically:
-
-```bash
-composer require spatie/laravel-webhook-server
-```
-
-The `webhook_subscriptions` migration runs automatically. Publish the config if you need to change defaults:
+Delivery goes through [spatie/laravel-webhook-server](https://github.com/spatie/laravel-webhook-server), which is
+installed as a dependency. The `webhook_subscriptions` and `webhook_deliveries` migrations run automatically. Publish
+the config if you need to change defaults:
 
 ```bash
 php artisan vendor:publish --tag=laravel-webhooks-config
@@ -132,6 +128,21 @@ Event::listen(InvoicePaid::class, DispatchWebhookEvent::class);
 Each active subscription for the event receives one signed call through spatie's queue-backed webhook server. Calls
 are signed with the subscription secret (unsigned when no secret is set) and include a timestamp against replay
 attacks (`webhooks.dispatcher.use_timestamp`).
+
+## Delivery log
+
+Every call attempt is recorded in the `webhook_deliveries` table (UUIDv7 keys): event name, url, payload, attempt,
+succeeded/failed status, HTTP response status, and error details. Retries of the same call share a `call_uuid`.
+
+```php
+use Bambamboole\LaravelWebhooks\Models\WebhookDelivery;
+
+WebhookDelivery::where('status', WebhookDelivery::STATUS_FAILED)->latest()->get();
+
+$delivery->subscription; // the WebhookSubscription it was delivered to, if any
+```
+
+Calls dispatched through spatie's webhook server directly (without this package's dispatcher) are not recorded.
 
 ## Development
 

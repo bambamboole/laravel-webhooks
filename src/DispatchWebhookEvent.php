@@ -23,12 +23,6 @@ final readonly class DispatchWebhookEvent
             return;
         }
 
-        if (! class_exists(WebhookCall::class)) {
-            throw new RuntimeException(
-                'Dispatching webhook events requires spatie/laravel-webhook-server. Install it to use DispatchWebhookEvent.',
-            );
-        }
-
         $payload = $this->payloads->make($definition, $event);
 
         foreach ($this->subscriptionsFor($definition->name, $event) as $subscription) {

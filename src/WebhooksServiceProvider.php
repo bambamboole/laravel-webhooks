@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Bambamboole\LaravelWebhooks;
 
 use Bambamboole\LaravelWebhooks\Support\ClassDiscoverer;
+use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\WebhookServer\Events\WebhookCallFailedEvent;
+use Spatie\WebhookServer\Events\WebhookCallSucceededEvent;
 
 class WebhooksServiceProvider extends PackageServiceProvider
 {
@@ -14,7 +17,10 @@ class WebhooksServiceProvider extends PackageServiceProvider
     {
         $package->name('laravel-webhooks')
             ->hasConfigFile()
-            ->hasMigration('create_webhook_subscriptions_table')
+            ->hasMigrations([
+                'create_webhook_subscriptions_table',
+                'create_webhook_deliveries_table',
+            ])
             ->runsMigrations();
     }
 
@@ -24,5 +30,11 @@ class WebhooksServiceProvider extends PackageServiceProvider
         $this->app->singleton(WebhookEventRegistry::class);
         $this->app->singleton(WebhookPayloadFactory::class);
         $this->app->bindIf(WebhookSubscriptionRepository::class, DatabaseWebhookSubscriptionRepository::class);
+    }
+
+    public function packageBooted(): void
+    {
+        Event::listen(WebhookCallSucceededEvent::class, RecordWebhookDelivery::class);
+        Event::listen(WebhookCallFailedEvent::class, RecordWebhookDelivery::class);
     }
 }

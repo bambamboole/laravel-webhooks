@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Bambamboole\LaravelWebhooks\Models;
 
 use Bambamboole\LaravelWebhooks\WebhookSubscription as Subscription;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property int $id
+ * @property string $id
  * @property string|null $name
  * @property string $url
  * @property string|null $secret
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class WebhookSubscription extends Model
 {
+    use HasUuids;
+
     protected $table = 'webhook_subscriptions';
 
     protected $guarded = [];

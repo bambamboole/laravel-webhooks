@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('webhook_subscriptions', function (Blueprint $table): void {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name')->nullable();
             $table->string('url');
             $table->text('secret')->nullable();

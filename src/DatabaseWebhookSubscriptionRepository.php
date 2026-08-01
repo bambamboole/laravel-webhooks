@@ -16,7 +16,6 @@ final readonly class DatabaseWebhookSubscriptionRepository implements WebhookSub
             ->where(fn (Builder $query): Builder => $query
                 ->whereJsonContains('events', $eventName)
                 ->orWhereJsonContains('events', '*'))
-            ->orderBy('id')
             ->get()
             ->map(fn (SubscriptionModel $subscription): WebhookSubscription => $subscription->toSubscription());
     }

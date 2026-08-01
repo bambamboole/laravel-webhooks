@@ -6,6 +6,7 @@ use Bambamboole\LaravelWebhooks\DatabaseWebhookSubscriptionRepository;
 use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
 use Bambamboole\LaravelWebhooks\Models\WebhookSubscription as SubscriptionModel;
 use Bambamboole\LaravelWebhooks\Tests\Fixtures\Webhooks\InvoicePaidWebhook;
+use Bambamboole\LaravelWebhooks\WebhookSubscription;
 use Bambamboole\LaravelWebhooks\WebhookSubscriptionRepository;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -38,18 +39,16 @@ it('returns active subscriptions matching the event or wildcard', function (): v
         'events' => ['invoice.refunded'],
     ]);
 
-    $subscriptions = iterator_to_array(
-        app(WebhookSubscriptionRepository::class)->forEvent('invoice.paid', new InvoicePaidWebhook),
-    );
+    $subscriptions = collect(app(WebhookSubscriptionRepository::class)->forEvent('invoice.paid', new InvoicePaidWebhook))
+        ->keyBy(fn (WebhookSubscription $subscription): string => $subscription->url);
 
-    expect($subscriptions)->toHaveCount(2)
-        ->and($subscriptions[0]->url)->toBe('https://example.com/billing')
-        ->and($subscriptions[0]->secret)->toBe('signing-secret')
-        ->and($subscriptions[0]->headers)->toBe(['X-Tenant' => 'acme'])
-        ->and($subscriptions[0]->id)->toBe((string) $matching->id)
-        ->and($subscriptions[1]->url)->toBe('https://example.com/firehose')
-        ->and($subscriptions[1]->secret)->toBeNull()
-        ->and($subscriptions[1]->id)->toBe((string) $wildcard->id);
+    expect($matching->id)->toBeUuid()
+        ->and($subscriptions)->toHaveCount(2)
+        ->and($subscriptions['https://example.com/billing']->secret)->toBe('signing-secret')
+        ->and($subscriptions['https://example.com/billing']->headers)->toBe(['X-Tenant' => 'acme'])
+        ->and($subscriptions['https://example.com/billing']->id)->toBe($matching->id)
+        ->and($subscriptions['https://example.com/firehose']->secret)->toBeNull()
+        ->and($subscriptions['https://example.com/firehose']->id)->toBe($wildcard->id);
 });
 
 it('encrypts subscription secrets at rest', function (): void {
