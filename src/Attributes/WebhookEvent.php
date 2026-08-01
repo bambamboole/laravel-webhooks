@@ -14,7 +14,6 @@ final readonly class WebhookEvent
      */
     public function __construct(
         public string $name,
-        public string $payloadMethod = 'webhookPayload',
         public ?string $title = null,
         public ?string $summary = null,
         public ?string $description = null,

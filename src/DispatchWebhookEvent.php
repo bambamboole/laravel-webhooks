@@ -25,7 +25,15 @@ final readonly class DispatchWebhookEvent
 
         $payload = $this->payloads->make($definition, $event);
 
-        foreach ($this->subscriptionsFor($definition->name, $event) as $subscription) {
+        /**
+         * App repositories may yield anything at runtime despite the interface
+         * generics, so widen to mixed to keep the instanceof guard meaningful.
+         *
+         * @var iterable<mixed> $subscriptions
+         */
+        $subscriptions = $this->subscriptions->forEvent($definition->name, $event);
+
+        foreach ($subscriptions as $subscription) {
             if (! $subscription instanceof WebhookSubscription) {
                 throw new RuntimeException(
                     'Webhook subscription repositories must yield [Bambamboole\LaravelWebhooks\WebhookSubscription] instances.',
@@ -34,12 +42,12 @@ final readonly class DispatchWebhookEvent
 
             $call = WebhookCall::create()
                 ->url($subscription->url)
-                ->payload($payload->body)
+                ->payload($payload)
                 ->withHeaders($subscription->headers)
                 ->meta([
                     'event' => $definition->name,
                     'subscription_id' => $subscription->id,
-                    'payload_id' => $payload->id,
+                    'payload_id' => $payload['id'],
                 ]);
 
             if ($subscription->secret !== null) {
@@ -54,16 +62,5 @@ final readonly class DispatchWebhookEvent
 
             $call->dispatch();
         }
-    }
-
-    /**
-     * App repositories may yield anything at runtime despite the interface
-     * generics, so widen to mixed to keep the instanceof guard meaningful.
-     *
-     * @return iterable<mixed>
-     */
-    private function subscriptionsFor(string $eventName, object $event): iterable
-    {
-        return $this->subscriptions->forEvent($eventName, $event);
     }
 }

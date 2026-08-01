@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use Bambamboole\LaravelWebhooks\Attributes\WebhookEvent;
 use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
 use Bambamboole\LaravelWebhooks\Tests\Fixtures\Webhooks\InvoicePaidWebhook;
 use Bambamboole\LaravelWebhooks\WebhookEventDefinition;
+use Bambamboole\LaravelWebhooks\WebhookEventRegistry;
 use Bambamboole\LaravelWebhooks\WebhookPayloadFactory;
 use Bambamboole\LaravelWebhooks\WebhookSubscription;
 use Bambamboole\LaravelWebhooks\WebhookSubscriptionRepository;
@@ -26,10 +26,9 @@ it('builds a stable envelope for an invoice paid webhook', function (): void {
         new InvoicePaidWebhook(invoiceId: 987, amount: 6500),
     );
 
-    expect(Str::isUuid($payload->id))->toBeTrue()
-        ->and($payload->event)->toBe('invoice.paid')
-        ->and($payload->body)->toEqual([
-            'id' => $payload->id,
+    expect(Str::isUuid($payload['id']))->toBeTrue()
+        ->and($payload)->toEqual([
+            'id' => $payload['id'],
             'event' => 'invoice.paid',
             'createdAt' => '2026-07-03T12:34:56.000000Z',
             'data' => [
@@ -42,6 +41,7 @@ it('builds a stable envelope for an invoice paid webhook', function (): void {
 it('dispatches documented webhook events through spatie', function (): void {
     Bus::fake();
     config()->set('webhooks.scan_paths', [dirname(__DIR__).'/Fixtures/Webhooks']);
+    app()->forgetInstance(WebhookEventRegistry::class);
 
     app()->bind(WebhookSubscriptionRepository::class, RecordingWebhookSubscriptionRepository::class);
 
@@ -79,6 +79,7 @@ it('dispatches documented webhook events through spatie', function (): void {
 it('ignores events that are not documented webhooks', function (): void {
     Bus::fake();
     config()->set('webhooks.scan_paths', [dirname(__DIR__).'/Fixtures/Webhooks']);
+    app()->forgetInstance(WebhookEventRegistry::class);
 
     app(DispatchWebhookEvent::class)->handle(new UndocumentedWebhookEvent);
 
@@ -88,6 +89,7 @@ it('ignores events that are not documented webhooks', function (): void {
 it('throws a useful runtime exception when a repository yields invalid subscriptions', function (): void {
     Bus::fake();
     config()->set('webhooks.scan_paths', [dirname(__DIR__).'/Fixtures/Webhooks']);
+    app()->forgetInstance(WebhookEventRegistry::class);
 
     app()->bind(WebhookSubscriptionRepository::class, InvalidWebhookSubscriptionRepository::class);
 
@@ -101,10 +103,10 @@ it('throws a useful runtime exception when a repository yields invalid subscript
 });
 
 it('throws a useful runtime exception when the payload method is missing', function (): void {
-    $definition = webhookDefinitionFor('invoice.missing', MissingPayloadMethodWebhook::class, payloadMethod: 'missingPayload');
+    $definition = webhookDefinitionFor('invoice.missing', MissingPayloadMethodWebhook::class);
 
     expect(fn () => app(WebhookPayloadFactory::class)->make($definition, new MissingPayloadMethodWebhook))
-        ->toThrow(RuntimeException::class, 'Webhook payload method [missingPayload] is missing on [MissingPayloadMethodWebhook]');
+        ->toThrow(RuntimeException::class, 'Webhook payload method [webhookPayload] is missing on [MissingPayloadMethodWebhook]');
 });
 
 it('throws a useful runtime exception when the payload method is handled by magic call', function (): void {
@@ -114,18 +116,18 @@ it('throws a useful runtime exception when the payload method is handled by magi
         ->toThrow(RuntimeException::class, 'Webhook payload method [webhookPayload] is missing on [MagicPayloadMethodWebhook]');
 });
 
-it('throws a useful runtime exception when the payload method is not public', function (): void {
+it('fails with a native error when the payload method is not public', function (): void {
     $definition = webhookDefinitionFor('invoice.private', PrivatePayloadMethodWebhook::class);
 
     expect(fn () => app(WebhookPayloadFactory::class)->make($definition, new PrivatePayloadMethodWebhook))
-        ->toThrow(RuntimeException::class, 'Webhook payload method [webhookPayload] on [PrivatePayloadMethodWebhook] must be public');
+        ->toThrow(Error::class);
 });
 
-it('throws a useful runtime exception when the payload method requires parameters', function (): void {
+it('fails with a native error when the payload method requires parameters', function (): void {
     $definition = webhookDefinitionFor('invoice.parameters', RequiredParameterPayloadWebhook::class);
 
     expect(fn () => app(WebhookPayloadFactory::class)->make($definition, new RequiredParameterPayloadWebhook))
-        ->toThrow(RuntimeException::class, 'Webhook payload method [webhookPayload] on [RequiredParameterPayloadWebhook] must have zero required parameters');
+        ->toThrow(ArgumentCountError::class);
 });
 
 it('throws a useful runtime exception when the payload method does not return an array', function (): void {
@@ -143,7 +145,7 @@ function invoicePaidWebhookDefinition(): WebhookEventDefinition
 /**
  * @param  class-string  $class
  */
-function webhookDefinitionFor(string $name, string $class, string $payloadMethod = 'webhookPayload'): WebhookEventDefinition
+function webhookDefinitionFor(string $name, string $class): WebhookEventDefinition
 {
     return new WebhookEventDefinition(
         name: $name,
@@ -152,7 +154,6 @@ function webhookDefinitionFor(string $name, string $class, string $payloadMethod
         summary: null,
         description: null,
         tags: [],
-        attribute: new WebhookEvent(name: $name, payloadMethod: $payloadMethod),
     );
 }
 

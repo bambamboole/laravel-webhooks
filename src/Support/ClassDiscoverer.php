@@ -4,55 +4,43 @@ declare(strict_types=1);
 
 namespace Bambamboole\LaravelWebhooks\Support;
 
+use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
-use SplFileInfo;
 
 final class ClassDiscoverer
 {
-    /**
-     * @var array<string, list<class-string>>
-     */
-    private array $discoveredClassesByPathSet = [];
-
     /**
      * @param  array<int, string>  $paths
      * @return list<class-string>
      */
     public function classesIn(array $paths): array
     {
-        $realPaths = collect($paths)
-            ->map(fn (string $path): string|false => realpath($path))
-            ->filter()
-            ->values()
-            ->all();
-
-        $pathSet = implode('|', $realPaths);
-
-        if (isset($this->discoveredClassesByPathSet[$pathSet])) {
-            return $this->discoveredClassesByPathSet[$pathSet];
-        }
+        $realPaths = array_values(array_filter(array_map(realpath(...), $paths)));
 
         foreach ($realPaths as $path) {
             $this->requirePhpFiles($path);
         }
 
-        return $this->discoveredClassesByPathSet[$pathSet] = collect(get_declared_classes())
-            ->filter(fn (string $class): bool => $this->classIsInPaths($class, $realPaths))
-            ->sort()
-            ->values()
-            ->all();
+        $classes = array_filter(
+            get_declared_classes(),
+            fn (string $class): bool => $this->classIsInPaths($class, $realPaths),
+        );
+
+        sort($classes);
+
+        return $classes;
     }
 
     private function requirePhpFiles(string $path): void
     {
         $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($path),
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
         );
 
         foreach ($files as $file) {
-            if ($file instanceof SplFileInfo && $file->isFile() && $file->getExtension() === 'php') {
+            if ($file->isFile() && $file->getExtension() === 'php') {
                 require_once $file->getPathname();
             }
         }

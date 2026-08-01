@@ -6,6 +6,7 @@ use Bambamboole\LaravelWebhooks\DatabaseWebhookSubscriptionRepository;
 use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
 use Bambamboole\LaravelWebhooks\Models\WebhookSubscription as SubscriptionModel;
 use Bambamboole\LaravelWebhooks\Tests\Fixtures\Webhooks\InvoicePaidWebhook;
+use Bambamboole\LaravelWebhooks\WebhookEventRegistry;
 use Bambamboole\LaravelWebhooks\WebhookSubscription;
 use Bambamboole\LaravelWebhooks\WebhookSubscriptionRepository;
 use Illuminate\Support\Facades\Bus;
@@ -67,6 +68,7 @@ it('encrypts subscription secrets at rest', function (): void {
 it('delivers database subscriptions end to end', function (): void {
     Bus::fake();
     config()->set('webhooks.scan_paths', [dirname(__DIR__).'/Fixtures/Webhooks']);
+    app()->forgetInstance(WebhookEventRegistry::class);
 
     SubscriptionModel::create([
         'url' => 'https://example.com/billing',

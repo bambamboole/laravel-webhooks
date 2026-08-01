@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Bambamboole\LaravelWebhooks;
 
-use Bambamboole\LaravelWebhooks\Support\ClassDiscoverer;
 use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -27,7 +26,6 @@ class WebhooksServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->app->singleton(ClassDiscoverer::class);
         $this->app->singleton(WebhookEventRegistry::class);
         $this->app->singleton(WebhookPayloadFactory::class);
         $this->app->bindIf(WebhookSubscriptionRepository::class, DatabaseWebhookSubscriptionRepository::class);

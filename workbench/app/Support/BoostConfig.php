@@ -21,13 +21,7 @@ class BoostConfig extends Config
     {
         $path = $this->path();
 
-        if (! file_exists($path)) {
-            return false;
-        }
-
-        json_decode((string) file_get_contents($path), true);
-
-        return json_last_error() === JSON_ERROR_NONE;
+        return file_exists($path) && json_validate((string) file_get_contents($path));
     }
 
     #[\Override]
