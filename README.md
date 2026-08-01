@@ -153,6 +153,13 @@ $delivery->subscription; // the WebhookSubscription it was delivered to, if any
 
 Calls dispatched through spatie's webhook server directly (without this package's dispatcher) are not recorded.
 
+The log is prunable: rows older than `webhooks.deliveries.prune_after_days` (default 30, `null` keeps them forever)
+are removed when your app schedules pruning:
+
+```php
+Schedule::command('model:prune', ['--model' => [WebhookDelivery::class]])->daily();
+```
+
 ## Development
 
 ```bash

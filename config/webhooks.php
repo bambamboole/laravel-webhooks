@@ -20,4 +20,10 @@ return [
         // attacks (requires spatie/laravel-webhook-server ^3.10).
         'use_timestamp' => true,
     ],
+
+    'deliveries' => [
+        // Delivery log rows older than this many days are removed when the
+        // app schedules `model:prune`. Null keeps them forever.
+        'prune_after_days' => 30,
+    ],
 ];

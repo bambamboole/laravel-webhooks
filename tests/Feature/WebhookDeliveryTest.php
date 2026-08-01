@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 use Bambamboole\LaravelWebhooks\Models\WebhookDelivery;
 use Bambamboole\LaravelWebhooks\Models\WebhookSubscription as SubscriptionModel;
+use Carbon\Carbon;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Support\Facades\Artisan;
 use Spatie\WebhookServer\Events\FinalWebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallEvent;
 use Spatie\WebhookServer\Events\WebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallSucceededEvent;
+
+afterEach(function (): void {
+    Carbon::setTestNow();
+});
 
 it('records succeeded webhook calls with their response status', function (): void {
     $subscription = SubscriptionModel::create([
@@ -95,6 +101,30 @@ it('ignores spatie webhook calls not dispatched by this package', function (): v
     ]));
 
     expect(WebhookDelivery::count())->toBe(0);
+});
+
+it('prunes deliveries older than the configured retention', function (): void {
+    Carbon::setTestNow(now()->subDays(40));
+    event(webhookCallEvent(WebhookCallSucceededEvent::class));
+    Carbon::setTestNow();
+    event(webhookCallEvent(WebhookCallSucceededEvent::class));
+
+    Artisan::call('model:prune', ['--model' => [WebhookDelivery::class]]);
+
+    expect(WebhookDelivery::count())->toBe(1)
+        ->and(WebhookDelivery::sole()->created_at?->isAfter(now()->subDay()))->toBeTrue();
+});
+
+it('keeps all deliveries when pruning is disabled', function (): void {
+    config()->set('webhooks.deliveries.prune_after_days');
+
+    Carbon::setTestNow(now()->subDays(400));
+    event(webhookCallEvent(WebhookCallSucceededEvent::class));
+    Carbon::setTestNow();
+
+    Artisan::call('model:prune', ['--model' => [WebhookDelivery::class]]);
+
+    expect(WebhookDelivery::count())->toBe(1);
 });
 
 /**
