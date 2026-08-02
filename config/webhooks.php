@@ -11,8 +11,7 @@ return [
 
     // Automatically register DispatchWebhookEvent as a listener for every
     // discovered webhook event class. Discovery scans the paths above at
-    // every boot; disable this and wire listeners manually if boot cost
-    // matters.
+    // every boot unless `php artisan webhooks:cache` has been run.
     'auto_listen' => true,
 
     'dispatcher' => [
