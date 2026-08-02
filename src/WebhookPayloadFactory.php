@@ -10,7 +10,7 @@ use RuntimeException;
 final readonly class WebhookPayloadFactory
 {
     /**
-     * @return array{id: string, event: string, createdAt: string, data: array<mixed>}
+     * @return array{id: string, event: string, createdAt: string, links?: array<string, string>, data: array<mixed>}
      */
     public function make(WebhookEventDefinition $definition, object $event): array
     {
@@ -26,20 +26,47 @@ final readonly class WebhookPayloadFactory
             throw new RuntimeException("Webhook payload method [webhookPayload] on [{$eventClass}] must return an array");
         }
 
-        return $this->envelope($definition->name, $data);
+        return $this->envelope($definition->name, $data, $this->links($event));
     }
 
     /**
      * @param  array<mixed>  $data
-     * @return array{id: string, event: string, createdAt: string, data: array<mixed>}
+     * @param  array<string, string>  $links
+     * @return array{id: string, event: string, createdAt: string, links?: array<string, string>, data: array<mixed>}
      */
-    public function envelope(string $eventName, array $data): array
+    public function envelope(string $eventName, array $data, array $links = []): array
     {
-        return [
+        $envelope = [
             'id' => (string) Str::uuid(),
             'event' => $eventName,
             'createdAt' => now()->toISOString(),
-            'data' => $data,
         ];
+
+        if ($links !== []) {
+            $envelope['links'] = $links;
+        }
+
+        $envelope['data'] = $data;
+
+        return $envelope;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function links(object $event): array
+    {
+        if (! method_exists($event, 'webhookLinks')) {
+            return [];
+        }
+
+        $eventClass = $event::class;
+        $links = $event->webhookLinks();
+
+        if (! is_array($links)) {
+            throw new RuntimeException("Webhook links method [webhookLinks] on [{$eventClass}] must return an array");
+        }
+
+        return $links;
     }
 }

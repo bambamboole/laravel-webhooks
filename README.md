@@ -45,16 +45,32 @@ final class InvoicePaid
             'amount' => $this->amount,
         ];
     }
+
+    /**
+     * @return array{self:string}
+     */
+    public function webhookLinks(): array
+    {
+        return [
+            'self' => route('api.invoices.show', $this->invoiceId),
+        ];
+    }
 }
 ```
 
-Every delivery wraps the payload in a stable envelope:
+Every delivery wraps the payload in a stable envelope. An optional `webhookLinks()` method adds JSON:API-style
+resource links so receivers can navigate back to (or re-fetch) the resources an event is about; the `links` key is
+omitted when an event defines none. Links live in the signed body, so receivers can trust them after verifying the
+signature:
 
 ```json
 {
     "id": "9d3c…",
     "event": "invoice.paid",
     "createdAt": "2026-07-03T12:34:56.000000Z",
+    "links": {
+        "self": "https://api.example.com/invoices/987"
+    },
     "data": {
         "invoiceId": 987,
         "amount": 6500
