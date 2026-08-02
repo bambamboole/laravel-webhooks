@@ -53,6 +53,22 @@ it('returns active subscriptions matching the event or wildcard', function (): v
         ->and($subscriptions['https://example.com/firehose']->id)->toBe($wildcard->id);
 });
 
+it('matches prefix wildcard event patterns', function (): void {
+    SubscriptionModel::create([
+        'url' => 'https://example.com/invoices',
+        'events' => ['invoice.*'],
+    ]);
+    SubscriptionModel::create([
+        'url' => 'https://example.com/payments',
+        'events' => ['payment.*'],
+    ]);
+
+    $subscriptions = collect(app(WebhookSubscriptionRepository::class)->forEvent('invoice.paid', new InvoicePaidWebhook))
+        ->map(fn (WebhookSubscription $subscription): string => $subscription->url);
+
+    expect($subscriptions->all())->toBe(['https://example.com/invoices']);
+});
+
 it('encrypts subscription secrets at rest', function (): void {
     $subscription = SubscriptionModel::create([
         'url' => 'https://example.com/billing',

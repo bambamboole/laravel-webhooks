@@ -9,6 +9,7 @@ use Bambamboole\LaravelWebhooks\WebhookPayloadFactory;
 use Bambamboole\LaravelWebhooks\WebhookSubscription as Subscription;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * @property string $id
@@ -44,6 +45,15 @@ class WebhookSubscription extends Model
             'active' => 'boolean',
             'secret' => 'encrypted',
         ];
+    }
+
+    /**
+     * Subscribed event entries are matched as wildcard patterns:
+     * `invoice.paid` exactly, `invoice.*` by prefix, `*` for everything.
+     */
+    public function matchesEvent(string $eventName): bool
+    {
+        return array_any($this->events, fn (string $pattern): bool => Str::is($pattern, $eventName));
     }
 
     /**
