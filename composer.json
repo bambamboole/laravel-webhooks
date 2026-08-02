@@ -26,10 +26,9 @@
         "spatie/laravel-webhook-server": "^3.10"
     },
     "require-dev": {
-        "bambamboole/extended-testbench": "^0.2",
+        "bambamboole/extended-testbench": "^0.3",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.16",
-        "orchestra/testbench": "^11.0",
         "pestphp/pest": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
         "pestphp/pest-plugin-phpstan": "^5.0",
@@ -69,15 +68,17 @@
             "@prepare"
         ],
         "post-install-cmd": [
-            "@hooks:install"
+            "@hooks:install",
+            "@boost:refresh"
         ],
         "post-update-cmd": [
-            "@hooks:install"
+            "@hooks:install",
+            "@boost:refresh"
         ],
         "hooks:install": "git config core.hooksPath .githooks 2>/dev/null || true",
         "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
         "prepare": "@php vendor/bin/testbench package:discover --ansi",
-        "boost:refresh": "@php vendor/bin/testbench boost:update --no-interaction",
+        "boost:refresh": "[ -n \"$CI\" ] || [ ! -f vendor/bin/testbench ] || [ ! -f boost.json ] || vendor/bin/testbench boost:update --no-interaction || true",
         "build": "@php vendor/bin/testbench workbench:build --ansi",
         "serve": [
             "Composer\\Config::disableProcessTimeout",
