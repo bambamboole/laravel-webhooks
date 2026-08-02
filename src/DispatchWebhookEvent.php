@@ -40,27 +40,35 @@ final readonly class DispatchWebhookEvent
                 );
             }
 
-            $call = WebhookCall::create()
-                ->url($subscription->url)
-                ->payload($payload)
-                ->withHeaders($subscription->headers)
-                ->meta([
-                    'event' => $definition->name,
-                    'subscription_id' => $subscription->id,
-                    'payload_id' => $payload['id'],
-                ]);
-
-            if ($subscription->secret !== null) {
-                $call->useSecret($subscription->secret);
-            } else {
-                $call->doNotSign();
-            }
-
-            if (config('webhooks.dispatcher.use_timestamp', true)) {
-                $call->useTimestamp();
-            }
-
-            $call->dispatch();
+            $this->send($subscription, $definition->name, $payload);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function send(WebhookSubscription $subscription, string $eventName, array $payload): void
+    {
+        $call = WebhookCall::create()
+            ->url($subscription->url)
+            ->payload($payload)
+            ->withHeaders($subscription->headers)
+            ->meta([
+                'event' => $eventName,
+                'subscription_id' => $subscription->id,
+                'payload_id' => $payload['id'] ?? null,
+            ]);
+
+        if ($subscription->secret !== null) {
+            $call->useSecret($subscription->secret);
+        } else {
+            $call->doNotSign();
+        }
+
+        if (config('webhooks.dispatcher.use_timestamp', true)) {
+            $call->useTimestamp();
+        }
+
+        $call->dispatch();
     }
 }
