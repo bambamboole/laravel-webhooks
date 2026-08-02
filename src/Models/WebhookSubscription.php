@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bambamboole\LaravelWebhooks\Models;
 
+use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
+use Bambamboole\LaravelWebhooks\WebhookPayloadFactory;
 use Bambamboole\LaravelWebhooks\WebhookSubscription as Subscription;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -42,6 +44,19 @@ class WebhookSubscription extends Model
             'active' => 'boolean',
             'secret' => 'encrypted',
         ];
+    }
+
+    /**
+     * Send a signed ping envelope to verify the endpoint. The ping is
+     * delivered and logged like any webhook call.
+     */
+    public function ping(): void
+    {
+        app(DispatchWebhookEvent::class)->send(
+            $this->toSubscription(),
+            'ping',
+            app(WebhookPayloadFactory::class)->envelope('ping', []),
+        );
     }
 
     public function toSubscription(): Subscription

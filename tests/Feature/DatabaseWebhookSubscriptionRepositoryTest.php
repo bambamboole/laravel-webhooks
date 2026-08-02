@@ -11,6 +11,7 @@ use Bambamboole\LaravelWebhooks\WebhookSubscription;
 use Bambamboole\LaravelWebhooks\WebhookSubscriptionRepository;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Spatie\WebhookServer\CallWebhookJob;
 
 it('is bound as the default subscription repository', function (): void {
@@ -63,6 +64,35 @@ it('encrypts subscription secrets at rest', function (): void {
 
     expect($raw)->not->toBe('signing-secret')
         ->and($subscription->fresh()?->secret)->toBe('signing-secret');
+});
+
+it('pings a subscription with a signed ping envelope', function (): void {
+    Bus::fake();
+
+    $subscription = SubscriptionModel::create([
+        'url' => 'https://example.com/billing',
+        'secret' => 'signing-secret',
+        'headers' => ['X-Tenant' => 'acme'],
+        'events' => ['invoice.paid'],
+    ]);
+
+    $subscription->ping();
+
+    Bus::assertDispatched(CallWebhookJob::class, function (CallWebhookJob $job) use ($subscription): bool {
+        expect($job->webhookUrl)->toBe('https://example.com/billing')
+            ->and($job->payload['event'])->toBe('ping')
+            ->and($job->payload['data'])->toBe([])
+            ->and(Str::isUuid($job->payload['id']))->toBeTrue()
+            ->and($job->headers)->toMatchArray(['X-Tenant' => 'acme'])
+            ->and($job->headers)->toHaveKey('Signature')
+            ->and($job->meta)->toMatchArray([
+                'event' => 'ping',
+                'subscription_id' => $subscription->id,
+                'payload_id' => $job->payload['id'],
+            ]);
+
+        return true;
+    });
 });
 
 it('delivers database subscriptions end to end', function (): void {

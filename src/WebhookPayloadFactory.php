@@ -26,9 +26,18 @@ final readonly class WebhookPayloadFactory
             throw new RuntimeException("Webhook payload method [webhookPayload] on [{$eventClass}] must return an array");
         }
 
+        return $this->envelope($definition->name, $data);
+    }
+
+    /**
+     * @param  array<mixed>  $data
+     * @return array{id: string, event: string, createdAt: string, data: array<mixed>}
+     */
+    public function envelope(string $eventName, array $data): array
+    {
         return [
             'id' => (string) Str::uuid(),
-            'event' => $definition->name,
+            'event' => $eventName,
             'createdAt' => now()->toISOString(),
             'data' => $data,
         ];
