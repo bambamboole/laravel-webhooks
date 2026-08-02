@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Bambamboole\LaravelWebhooks\Support\ClassDiscoverer;
 use Bambamboole\LaravelWebhooks\WebhookEventRegistry;
+use Workbench\App\Events\InvoicePaid;
 
 afterEach(function (): void {
     $path = app()->bootstrapPath('cache/webhooks.php');
@@ -28,6 +29,24 @@ it('caches discovered webhook events for the registry to load', function (): voi
         ->and($definitions[0]->name)->toBe('invoice.paid')
         ->and($definitions[0]->title)->toBe('Invoice Paid')
         ->and($definitions[1]->name)->toBe('invoice.refunded');
+});
+
+it('lists the discovered webhook events', function (): void {
+    $this->artisan('webhooks:events')
+        ->expectsTable(
+            ['Event', 'Title', 'Class'],
+            [['invoice.paid', 'Invoice Paid', InvoicePaid::class]],
+        )
+        ->assertSuccessful();
+});
+
+it('reports when no webhook events are discovered', function (): void {
+    config()->set('webhooks.scan_paths', []);
+    app()->forgetInstance(WebhookEventRegistry::class);
+
+    $this->artisan('webhooks:events')
+        ->expectsOutputToContain('No webhook events discovered.')
+        ->assertSuccessful();
 });
 
 it('clears the webhook events cache', function (): void {

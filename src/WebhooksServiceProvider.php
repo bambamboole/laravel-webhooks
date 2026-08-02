@@ -6,6 +6,7 @@ namespace Bambamboole\LaravelWebhooks;
 
 use Bambamboole\LaravelWebhooks\Commands\CacheWebhookEventsCommand;
 use Bambamboole\LaravelWebhooks\Commands\ClearWebhookEventsCommand;
+use Bambamboole\LaravelWebhooks\Commands\ListWebhookEventsCommand;
 use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -27,6 +28,7 @@ class WebhooksServiceProvider extends PackageServiceProvider
             ->hasCommands([
                 CacheWebhookEventsCommand::class,
                 ClearWebhookEventsCommand::class,
+                ListWebhookEventsCommand::class,
             ]);
     }
 
