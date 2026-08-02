@@ -30,4 +30,14 @@ final class InvoicePaidWebhook
             'amount' => $this->amount,
         ];
     }
+
+    /**
+     * @return array{self:string}
+     */
+    public function webhookLinks(): array
+    {
+        return [
+            'self' => "https://api.example.com/invoices/{$this->invoiceId}",
+        ];
+    }
 }

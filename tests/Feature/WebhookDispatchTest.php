@@ -31,11 +31,30 @@ it('builds a stable envelope for an invoice paid webhook', function (): void {
             'id' => $payload['id'],
             'event' => 'invoice.paid',
             'createdAt' => '2026-07-03T12:34:56.000000Z',
+            'links' => [
+                'self' => 'https://api.example.com/invoices/987',
+            ],
             'data' => [
                 'invoiceId' => 987,
                 'amount' => 6500,
             ],
         ]);
+});
+
+it('omits the links key when the event defines no links', function (): void {
+    $payload = app(WebhookPayloadFactory::class)->make(
+        webhookDefinitionFor('invoice.linkless', LinklessWebhook::class),
+        new LinklessWebhook,
+    );
+
+    expect($payload)->not->toHaveKey('links');
+});
+
+it('throws a useful runtime exception when the links method does not return an array', function (): void {
+    $definition = webhookDefinitionFor('invoice.links', NonArrayLinksWebhook::class);
+
+    expect(fn () => app(WebhookPayloadFactory::class)->make($definition, new NonArrayLinksWebhook))
+        ->toThrow(RuntimeException::class, 'Webhook links method [webhookLinks] on [NonArrayLinksWebhook] must return an array');
 });
 
 it('dispatches documented webhook events through spatie', function (): void {
@@ -158,6 +177,33 @@ function webhookDefinitionFor(string $name, string $class): WebhookEventDefiniti
 }
 
 final class MissingPayloadMethodWebhook {}
+
+final class LinklessWebhook
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function webhookPayload(): array
+    {
+        return [];
+    }
+}
+
+final class NonArrayLinksWebhook
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function webhookPayload(): array
+    {
+        return [];
+    }
+
+    public function webhookLinks(): string
+    {
+        return 'https://api.example.com/invoices/1';
+    }
+}
 
 final class MagicPayloadMethodWebhook
 {
