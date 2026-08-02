@@ -10,5 +10,7 @@ _ide_helper.php
 .agents
 .claude
 .codex
+.junie
+.mcp.json
 AGENTS.md
 CLAUDE.md
