@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Bambamboole\LaravelWebhooks\Models;
 
+use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 
 /**
  * @property string $id
@@ -59,6 +61,21 @@ class WebhookDelivery extends Model
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(WebhookSubscription::class, 'subscription_id');
+    }
+
+    /**
+     * Redeliver the stored payload using the subscription's current
+     * url, secret, and headers. The resend is logged like any delivery.
+     */
+    public function resend(): void
+    {
+        $subscription = $this->subscription;
+
+        if ($subscription === null) {
+            throw new RuntimeException("Cannot resend webhook delivery [{$this->id}] without its subscription");
+        }
+
+        app(DispatchWebhookEvent::class)->send($subscription->toSubscription(), $this->event, $this->payload);
     }
 
     /**

@@ -40,6 +40,16 @@ final class WebhookEventRegistry
             return $this->definitions;
         }
 
+        return $this->definitions = $this->loadCachedDefinitions() ?? $this->discover();
+    }
+
+    /**
+     * Scan the configured paths, ignoring the memo and the cache file.
+     *
+     * @return list<WebhookEventDefinition>
+     */
+    public function discover(): array
+    {
         $definitions = [];
 
         foreach ($this->classes->classesIn($this->scanPaths()) as $class) {
@@ -73,7 +83,30 @@ final class WebhookEventRegistry
 
         ksort($definitions);
 
-        return $this->definitions = array_values($definitions);
+        return array_values($definitions);
+    }
+
+    public function cachePath(): string
+    {
+        return app()->bootstrapPath('cache/webhooks.php');
+    }
+
+    /**
+     * @return list<WebhookEventDefinition>|null
+     */
+    private function loadCachedDefinitions(): ?array
+    {
+        if (! is_file($this->cachePath())) {
+            return null;
+        }
+
+        /** @var list<array{name: string, class: class-string, title: string|null, summary: string|null, description: string|null, tags: list<string>}> $rows */
+        $rows = require $this->cachePath();
+
+        return array_map(
+            fn (array $row): WebhookEventDefinition => new WebhookEventDefinition(...$row),
+            $rows,
+        );
     }
 
     /**

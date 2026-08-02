@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bambamboole\LaravelWebhooks\Models;
 
+use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
+use Bambamboole\LaravelWebhooks\WebhookPayloadFactory;
 use Bambamboole\LaravelWebhooks\WebhookSubscription as Subscription;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -42,6 +44,48 @@ class WebhookSubscription extends Model
             'active' => 'boolean',
             'secret' => 'encrypted',
         ];
+    }
+
+    /**
+     * Subscribed event entries match by exact name, a dot-boundary prefix
+     * wildcard (`invoice.*`), or the `*` catch-all.
+     */
+    public function matchesEvent(string $eventName): bool
+    {
+        return array_intersect($this->events, self::candidatePatterns($eventName)) !== [];
+    }
+
+    /**
+     * Every pattern that can match the given event name. Matching is
+     * expressed as containment so it stays a portable database query.
+     *
+     * @return list<string>
+     */
+    public static function candidatePatterns(string $eventName): array
+    {
+        $patterns = [$eventName, '*'];
+        $segments = explode('.', $eventName);
+        array_pop($segments);
+
+        while ($segments !== []) {
+            $patterns[] = implode('.', $segments).'.*';
+            array_pop($segments);
+        }
+
+        return $patterns;
+    }
+
+    /**
+     * Send a signed ping envelope to verify the endpoint. The ping is
+     * delivered and logged like any webhook call.
+     */
+    public function ping(): void
+    {
+        app(DispatchWebhookEvent::class)->send(
+            $this->toSubscription(),
+            'ping',
+            app(WebhookPayloadFactory::class)->envelope('ping', []),
+        );
     }
 
     public function toSubscription(): Subscription

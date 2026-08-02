@@ -9,6 +9,8 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Bus;
+use Spatie\WebhookServer\CallWebhookJob;
 use Spatie\WebhookServer\Events\FinalWebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallEvent;
 use Spatie\WebhookServer\Events\WebhookCallFailedEvent;
@@ -101,6 +103,63 @@ it('ignores spatie webhook calls not dispatched by this package', function (): v
     ]));
 
     expect(WebhookDelivery::count())->toBe(0);
+});
+
+it('resends a delivery using the current subscription configuration', function (): void {
+    Bus::fake();
+
+    $subscription = SubscriptionModel::create([
+        'url' => 'https://example.com/billing-v2',
+        'secret' => 'rotated-secret',
+        'headers' => ['X-Tenant' => 'acme'],
+        'events' => ['invoice.paid'],
+    ]);
+
+    $delivery = WebhookDelivery::create([
+        'subscription_id' => $subscription->id,
+        'call_uuid' => 'call-uuid',
+        'event' => 'invoice.paid',
+        'url' => 'https://example.com/billing-v1',
+        'http_verb' => 'post',
+        'payload' => ['id' => 'payload-uuid', 'event' => 'invoice.paid', 'data' => ['invoiceId' => 987]],
+        'attempt' => 3,
+        'status' => WebhookDelivery::STATUS_FINAL_FAILED,
+    ]);
+
+    $delivery->resend();
+
+    Bus::assertDispatched(CallWebhookJob::class, function (CallWebhookJob $job) use ($subscription): bool {
+        expect($job->webhookUrl)->toBe('https://example.com/billing-v2')
+            ->and($job->payload)->toBe(['id' => 'payload-uuid', 'event' => 'invoice.paid', 'data' => ['invoiceId' => 987]])
+            ->and($job->headers)->toMatchArray(['X-Tenant' => 'acme'])
+            ->and($job->headers)->toHaveKey('Signature')
+            ->and($job->meta)->toMatchArray([
+                'event' => 'invoice.paid',
+                'subscription_id' => $subscription->id,
+                'payload_id' => 'payload-uuid',
+            ]);
+
+        return true;
+    });
+});
+
+it('refuses to resend a delivery without a subscription', function (): void {
+    Bus::fake();
+
+    $delivery = WebhookDelivery::create([
+        'call_uuid' => 'call-uuid',
+        'event' => 'invoice.paid',
+        'url' => 'https://example.com/webhooks',
+        'http_verb' => 'post',
+        'payload' => ['event' => 'invoice.paid'],
+        'attempt' => 1,
+        'status' => WebhookDelivery::STATUS_FAILED,
+    ]);
+
+    expect(fn () => $delivery->resend())
+        ->toThrow(RuntimeException::class, "Cannot resend webhook delivery [{$delivery->id}] without its subscription");
+
+    Bus::assertNothingDispatched();
 });
 
 it('prunes deliveries older than the configured retention', function (): void {

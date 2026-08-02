@@ -13,9 +13,11 @@ final readonly class DatabaseWebhookSubscriptionRepository implements WebhookSub
     {
         return SubscriptionModel::query()
             ->where('active', true)
-            ->where(fn (Builder $query): Builder => $query
-                ->whereJsonContains('events', $eventName)
-                ->orWhereJsonContains('events', '*'))
+            ->where(function (Builder $query) use ($eventName): void {
+                foreach (SubscriptionModel::candidatePatterns($eventName) as $pattern) {
+                    $query->orWhereJsonContains('events', $pattern);
+                }
+            })
             ->get()
             ->map(fn (SubscriptionModel $subscription): WebhookSubscription => $subscription->toSubscription());
     }

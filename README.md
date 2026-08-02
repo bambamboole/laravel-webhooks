@@ -78,8 +78,9 @@ $events = collect(app(WebhookEventRegistry::class)->all())
 
 ## Managing subscriptions
 
-Subscriptions live in the `webhook_subscriptions` table via the shipped Eloquent model. `events` holds the subscribed
-event names; `'*'` subscribes to everything. Secrets are encrypted at rest and used to sign deliveries.
+Subscriptions live in the `webhook_subscriptions` table via the shipped Eloquent model. `events` holds wildcard
+patterns: `invoice.paid` matches exactly, `invoice.*` matches every invoice event, and `'*'` subscribes to everything.
+Secrets are encrypted at rest and used to sign deliveries.
 
 ```php
 use Bambamboole\LaravelWebhooks\Models\WebhookSubscription;
@@ -91,6 +92,12 @@ WebhookSubscription::create([
     'headers' => ['X-Tenant' => 'acme'],
     'events' => ['invoice.paid', 'invoice.refunded'],
 ]);
+```
+
+Verify an endpoint by sending a signed `ping` event through the normal delivery pipeline:
+
+```php
+$subscription->ping();
 ```
 
 To source subscriptions from somewhere else, bind your own repository — the database repository is only a default
@@ -123,8 +130,15 @@ discovered `#[WebhookEvent]` class are registered automatically:
 event(new InvoicePaid(invoiceId: 987, amount: 6500));
 ```
 
-Discovery scans the configured paths at every boot. If that cost matters to you, set `webhooks.auto_listen` to
-`false` and wire the dispatcher yourself:
+Discovery scans the configured paths at every boot. Cache the result in production like you cache routes:
+
+```bash
+php artisan webhooks:cache    # writes bootstrap/cache/webhooks.php, loaded instead of scanning
+php artisan webhooks:clear    # removes the cache
+php artisan webhooks:events   # lists what discovery found
+```
+
+Alternatively set `webhooks.auto_listen` to `false` and wire the dispatcher yourself:
 
 ```php
 use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
@@ -149,6 +163,13 @@ use Bambamboole\LaravelWebhooks\Models\WebhookDelivery;
 WebhookDelivery::where('status', WebhookDelivery::STATUS_FAILED)->latest()->get();
 
 $delivery->subscription; // the WebhookSubscription it was delivered to, if any
+```
+
+Resend a delivery — the stored payload goes out again using the subscription's *current* url, secret, and headers,
+so rotated secrets and moved endpoints are honored:
+
+```php
+$delivery->resend();
 ```
 
 Calls dispatched through spatie's webhook server directly (without this package's dispatcher) are not recorded.
