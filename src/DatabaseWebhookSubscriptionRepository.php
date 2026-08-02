@@ -5,19 +5,20 @@ declare(strict_types=1);
 namespace Bambamboole\LaravelWebhooks;
 
 use Bambamboole\LaravelWebhooks\Models\WebhookSubscription as SubscriptionModel;
+use Illuminate\Database\Eloquent\Builder;
 
 final readonly class DatabaseWebhookSubscriptionRepository implements WebhookSubscriptionRepository
 {
     public function forEvent(string $eventName, object $event): iterable
     {
-        // ponytail: loads every active subscription and matches in PHP so
-        // wildcard patterns work across drivers; push matching into SQL if
-        // subscription counts get large.
         return SubscriptionModel::query()
             ->where('active', true)
+            ->where(function (Builder $query) use ($eventName): void {
+                foreach (SubscriptionModel::candidatePatterns($eventName) as $pattern) {
+                    $query->orWhereJsonContains('events', $pattern);
+                }
+            })
             ->get()
-            ->filter(fn (SubscriptionModel $subscription): bool => $subscription->matchesEvent($eventName))
-            ->map(fn (SubscriptionModel $subscription): WebhookSubscription => $subscription->toSubscription())
-            ->values();
+            ->map(fn (SubscriptionModel $subscription): WebhookSubscription => $subscription->toSubscription());
     }
 }

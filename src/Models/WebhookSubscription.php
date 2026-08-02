@@ -9,7 +9,6 @@ use Bambamboole\LaravelWebhooks\WebhookPayloadFactory;
 use Bambamboole\LaravelWebhooks\WebhookSubscription as Subscription;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 /**
  * @property string $id
@@ -48,12 +47,32 @@ class WebhookSubscription extends Model
     }
 
     /**
-     * Subscribed event entries are matched as wildcard patterns:
-     * `invoice.paid` exactly, `invoice.*` by prefix, `*` for everything.
+     * Subscribed event entries match by exact name, a dot-boundary prefix
+     * wildcard (`invoice.*`), or the `*` catch-all.
      */
     public function matchesEvent(string $eventName): bool
     {
-        return array_any($this->events, fn (string $pattern): bool => Str::is($pattern, $eventName));
+        return array_intersect($this->events, self::candidatePatterns($eventName)) !== [];
+    }
+
+    /**
+     * Every pattern that can match the given event name. Matching is
+     * expressed as containment so it stays a portable database query.
+     *
+     * @return list<string>
+     */
+    public static function candidatePatterns(string $eventName): array
+    {
+        $patterns = [$eventName, '*'];
+        $segments = explode('.', $eventName);
+        array_pop($segments);
+
+        while ($segments !== []) {
+            $patterns[] = implode('.', $segments).'.*';
+            array_pop($segments);
+        }
+
+        return $patterns;
     }
 
     /**

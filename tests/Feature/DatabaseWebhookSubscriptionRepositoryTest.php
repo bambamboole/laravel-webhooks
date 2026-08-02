@@ -69,6 +69,17 @@ it('matches prefix wildcard event patterns', function (): void {
     expect($subscriptions->all())->toBe(['https://example.com/invoices']);
 });
 
+it('matches prefix wildcards at any depth', function (): void {
+    SubscriptionModel::create([
+        'url' => 'https://example.com/invoices',
+        'events' => ['invoice.*'],
+    ]);
+
+    $subscriptions = collect(app(WebhookSubscriptionRepository::class)->forEvent('invoice.paid.eu', new InvoicePaidWebhook));
+
+    expect($subscriptions)->toHaveCount(1);
+});
+
 it('encrypts subscription secrets at rest', function (): void {
     $subscription = SubscriptionModel::create([
         'url' => 'https://example.com/billing',
