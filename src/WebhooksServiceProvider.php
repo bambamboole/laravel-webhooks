@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bambamboole\LaravelWebhooks;
 
+use Bambamboole\LaravelWebhooks\Commands\CacheWebhookEventsCommand;
+use Bambamboole\LaravelWebhooks\Commands\ClearWebhookEventsCommand;
 use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -21,7 +23,11 @@ class WebhooksServiceProvider extends PackageServiceProvider
                 'create_webhook_subscriptions_table',
                 'create_webhook_deliveries_table',
             ])
-            ->runsMigrations();
+            ->runsMigrations()
+            ->hasCommands([
+                CacheWebhookEventsCommand::class,
+                ClearWebhookEventsCommand::class,
+            ]);
     }
 
     public function packageRegistered(): void
