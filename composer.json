@@ -26,7 +26,7 @@
         "spatie/laravel-webhook-server": "^3.10"
     },
     "require-dev": {
-        "bambamboole/extended-testbench": "^0.3",
+        "bambamboole/extended-testbench": "^0.6.1",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.16",
         "pestphp/pest": "^5.0",
@@ -46,26 +46,24 @@
         }
     },
     "scripts": {
-        "analyse": "./vendor/bin/phpstan analyse",
+        "stan": "phpstan analyse",
         "check": [
-            "@test:lint",
-            "@analyse",
-            "@rector:test",
+            "pint --test",
+            "phpstan analyse",
+            "rector --dry-run",
             "@test"
         ],
-        "lint:fix": "./vendor/bin/pint",
-        "test:lint": "./vendor/bin/pint --test",
-        "rector": "./vendor/bin/rector process",
-        "rector:test": "./vendor/bin/rector process --dry-run",
-        "test": "./vendor/bin/pest",
-        "test:coverage": "./vendor/bin/pest --coverage",
+        "lint": "pint --format agent",
+        "refactor": "rector",
+        "test": "pest",
+        "test:coverage": "pest --coverage",
         "fix": [
-            "@rector",
-            "@lint:fix"
+            "@refactor",
+            "@lint"
         ],
         "post-autoload-dump": [
-            "@clear",
-            "@prepare"
+            "@php vendor/bin/testbench package:purge-skeleton --ansi",
+            "@php vendor/bin/testbench package:discover --ansi"
         ],
         "post-install-cmd": [
             "@hooks:install",
@@ -76,9 +74,7 @@
             "@boost:refresh"
         ],
         "hooks:install": "git config core.hooksPath .githooks 2>/dev/null || true",
-        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
-        "prepare": "@php vendor/bin/testbench package:discover --ansi",
-        "boost:refresh": "[ -n \"$CI\" ] || [ ! -f vendor/bin/testbench ] || [ ! -f boost.json ] || vendor/bin/testbench boost:update --no-interaction || true",
+        "boost:refresh": "[ -n \"$CI\" ] || [ ! -f vendor/bin/testbench ] || [ ! -f boost.json ] || { [ -f package.json ] && [ ! -d node_modules ]; } || vendor/bin/testbench boost:update --no-interaction || true",
         "build": "@php vendor/bin/testbench workbench:build --ansi",
         "serve": [
             "Composer\\Config::disableProcessTimeout",
@@ -90,6 +86,12 @@
         "laravel": {
             "providers": [
                 "Bambamboole\\LaravelWebhooks\\WebhooksServiceProvider"
+            ]
+        },
+        "extended-testbench": {
+            "check-ignore": [
+                "tests/Unit",
+                "phpunit.xml.dist"
             ]
         }
     },

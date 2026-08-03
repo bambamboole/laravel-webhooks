@@ -11,6 +11,8 @@ _ide_helper.php
 .claude
 .codex
 .junie
+.superpowers
+docs/superpowers
 .mcp.json
 AGENTS.md
 CLAUDE.md
