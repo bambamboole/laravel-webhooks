@@ -12,6 +12,7 @@ return new class extends Migration
     {
         Schema::create('webhook_subscriptions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->uuid('tenant_id')->nullable();
             $table->string('name')->nullable();
             $table->string('url');
             $table->text('secret')->nullable();
