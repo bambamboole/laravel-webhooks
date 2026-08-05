@@ -12,6 +12,7 @@ return new class extends Migration
     {
         Schema::create('webhook_deliveries', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->uuid('tenant_id')->nullable();
             // Plain string on purpose: custom subscription repositories may
             // yield ids that are not uuids of webhook_subscriptions rows.
             $table->string('subscription_id')->nullable()->index();
