@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property string $id
+ * @property string|null $tenant_id
  * @property string|null $name
  * @property string $url
  * @property string|null $secret
