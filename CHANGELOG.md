@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/bambamboole/laravel-webhooks/compare/0.2.0...0.2.1) (2026-08-08)
+
+
+### Bug Fixes
+
+* document tenant_id property and index the column ([043b25f](https://github.com/bambamboole/laravel-webhooks/commit/043b25ff07dd0888edc3a68852a7a15a5a61df52))
+* document tenant_id property and index the column ([55e2151](https://github.com/bambamboole/laravel-webhooks/commit/55e215176c78950c8d9ca5674f64b6c26a8f2657))
+
 ## [0.2.0](https://github.com/bambamboole/laravel-webhooks/compare/0.1.0...0.2.0) (2026-08-02)
 
 
