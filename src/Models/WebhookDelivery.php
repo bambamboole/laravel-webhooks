@@ -15,6 +15,7 @@ use RuntimeException;
 
 /**
  * @property string $id
+ * @property string|null $tenant_id
  * @property string|null $subscription_id
  * @property string $call_uuid
  * @property string $event
