@@ -22,7 +22,6 @@
         "php": "^8.4",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
-        "spatie/laravel-package-tools": "^1.16 || ^2.0",
         "spatie/laravel-webhook-server": "^3.10"
     },
     "require-dev": {

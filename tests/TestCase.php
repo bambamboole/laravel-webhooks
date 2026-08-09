@@ -26,6 +26,11 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('database.default', 'testing');
     }
 
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+    }
+
     /**
      * @param  Application  $app
      * @return array<int, class-string>

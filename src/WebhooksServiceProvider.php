@@ -8,39 +8,41 @@ use Bambamboole\LaravelWebhooks\Commands\CacheWebhookEventsCommand;
 use Bambamboole\LaravelWebhooks\Commands\ClearWebhookEventsCommand;
 use Bambamboole\LaravelWebhooks\Commands\ListWebhookEventsCommand;
 use Illuminate\Support\Facades\Event;
-use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Illuminate\Support\ServiceProvider;
 use Spatie\WebhookServer\Events\FinalWebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallFailedEvent;
 use Spatie\WebhookServer\Events\WebhookCallSucceededEvent;
 
-class WebhooksServiceProvider extends PackageServiceProvider
+class WebhooksServiceProvider extends ServiceProvider
 {
-    public function configurePackage(Package $package): void
+    #[\Override]
+    public function register(): void
     {
-        $package->name('laravel-webhooks')
-            ->hasConfigFile()
-            ->hasMigrations([
-                'create_webhook_subscriptions_table',
-                'create_webhook_deliveries_table',
-            ])
-            ->runsMigrations()
-            ->hasCommands([
-                CacheWebhookEventsCommand::class,
-                ClearWebhookEventsCommand::class,
-                ListWebhookEventsCommand::class,
-            ]);
-    }
+        $this->mergeConfigFrom(__DIR__.'/../config/webhooks.php', 'webhooks');
 
-    public function packageRegistered(): void
-    {
         $this->app->singleton(WebhookEventRegistry::class);
         $this->app->singleton(WebhookPayloadFactory::class);
         $this->app->bindIf(WebhookSubscriptionRepository::class, DatabaseWebhookSubscriptionRepository::class);
     }
 
-    public function packageBooted(): void
+    public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/webhooks.php' => $this->app->configPath('webhooks.php'),
+            ], 'webhooks-config');
+
+            $this->publishesMigrations([
+                __DIR__.'/../database/migrations' => $this->app->databasePath('migrations'),
+            ], 'webhooks-migrations');
+
+            $this->commands([
+                CacheWebhookEventsCommand::class,
+                ClearWebhookEventsCommand::class,
+                ListWebhookEventsCommand::class,
+            ]);
+        }
+
         Event::listen(WebhookCallSucceededEvent::class, RecordWebhookDelivery::class);
         Event::listen(WebhookCallFailedEvent::class, RecordWebhookDelivery::class);
         Event::listen(FinalWebhookCallFailedEvent::class, RecordWebhookDelivery::class);
