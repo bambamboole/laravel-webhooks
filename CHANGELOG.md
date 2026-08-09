@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.2](https://github.com/bambamboole/laravel-webhooks/compare/0.3.1...0.3.2) (2026-08-09)
+
+
+### Bug Fixes
+
+* prefix migration stubs with a timestamp so publish rewrites the date ([fbdfdd0](https://github.com/bambamboole/laravel-webhooks/commit/fbdfdd09081bcb5793ba22b06ea51f99d6536449))
+* prefix migration stubs with a timestamp so publish rewrites the date ([2cd13a4](https://github.com/bambamboole/laravel-webhooks/commit/2cd13a427380c6f95eea15c4a01f546c64c4d41c))
+
+
+### Refactoring
+
+* drop spatie/laravel-package-tools, publish migrations only ([7e00600](https://github.com/bambamboole/laravel-webhooks/commit/7e006002024176c501ef9c076148237798218e88))
+* drop spatie/laravel-package-tools, publish migrations only ([1ef0dd4](https://github.com/bambamboole/laravel-webhooks/commit/1ef0dd425b77f96632603fb0b7a6d1b7e81a2e91))
+
 ## [0.3.1](https://github.com/bambamboole/laravel-webhooks/compare/0.3.0...0.3.1) (2026-08-08)
 
 
