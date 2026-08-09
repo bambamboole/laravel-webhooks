@@ -15,4 +15,9 @@ class WorkbenchServiceProvider extends ServiceProvider
     {
         config()->set('webhooks.scan_paths', [package_path('workbench/app/Events')]);
     }
+
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(package_path('database/migrations'));
+    }
 }
