@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use Bambamboole\LaravelWebhooks\Models\WebhookDelivery;
+use Bambamboole\LaravelWebhooks\Models\WebhookSubscription;
 
 return [
     // Directories scanned recursively for classes carrying the
@@ -18,6 +20,13 @@ return [
         // Sign calls with a timestamp to protect receivers against replay
         // attacks (requires spatie/laravel-webhook-server ^3.10).
         'use_timestamp' => true,
+    ],
+
+    // Swap in app-level subclasses (e.g. to add tenancy or global scopes).
+    // Each class must extend the package model it replaces.
+    'models' => [
+        'subscription' => WebhookSubscription::class,
+        'delivery' => WebhookDelivery::class,
     ],
 
     'deliveries' => [

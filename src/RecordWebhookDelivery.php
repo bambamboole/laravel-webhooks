@@ -22,7 +22,7 @@ final class RecordWebhookDelivery
         // Spatie fires this in addition to the regular failed event for the
         // same attempt, so flip that row instead of inserting a duplicate.
         if ($event instanceof FinalWebhookCallFailedEvent) {
-            WebhookDelivery::query()
+            Webhooks::deliveryQuery()
                 ->where('call_uuid', $event->uuid)
                 ->where('attempt', $event->attempt)
                 ->update(['status' => WebhookDelivery::STATUS_FINAL_FAILED]);
@@ -30,7 +30,7 @@ final class RecordWebhookDelivery
             return;
         }
 
-        WebhookDelivery::create([
+        Webhooks::deliveryQuery()->create([
             'subscription_id' => $event->meta['subscription_id'] ?? null,
             'call_uuid' => $event->uuid,
             'event' => $event->meta['event'],

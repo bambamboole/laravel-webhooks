@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bambamboole\LaravelWebhooks\Models;
 
 use Bambamboole\LaravelWebhooks\DispatchWebhookEvent;
+use Bambamboole\LaravelWebhooks\Webhooks;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\MassPrunable;
@@ -41,6 +42,8 @@ class WebhookDelivery extends Model
 
     public const string STATUS_FINAL_FAILED = 'final_failed';
 
+    protected $table = 'webhook_deliveries';
+
     protected $guarded = [];
 
     /**
@@ -61,7 +64,7 @@ class WebhookDelivery extends Model
      */
     public function subscription(): BelongsTo
     {
-        return $this->belongsTo(WebhookSubscription::class, 'subscription_id');
+        return $this->belongsTo(Webhooks::subscriptionModel(), 'subscription_id');
     }
 
     /**
