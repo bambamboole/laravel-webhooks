@@ -197,6 +197,20 @@ are removed when your app schedules pruning:
 Schedule::command('model:prune', ['--model' => [WebhookDelivery::class]])->daily();
 ```
 
+## Custom model classes
+
+Both Eloquent models can be replaced with app-level subclasses via `webhooks.models` — useful for adding tenancy,
+global scopes, or extra relations. Every internal read and write (delivery recording, subscription matching, the
+`subscription` relation) resolves through this config; each class must extend the package model it replaces:
+
+```php
+// config/webhooks.php
+'models' => [
+    'subscription' => \App\Models\WebhookSubscription::class,
+    'delivery' => \App\Models\WebhookDelivery::class,
+],
+```
+
 ## Development
 
 ```bash

@@ -11,7 +11,7 @@ final readonly class DatabaseWebhookSubscriptionRepository implements WebhookSub
 {
     public function forEvent(string $eventName, object $event): iterable
     {
-        return SubscriptionModel::query()
+        return Webhooks::subscriptionQuery()
             ->where('active', true)
             ->where(function (Builder $query) use ($eventName): void {
                 foreach (SubscriptionModel::candidatePatterns($eventName) as $pattern) {
