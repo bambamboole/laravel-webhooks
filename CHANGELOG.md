@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/bambamboole/laravel-webhooks/compare/0.3.2...0.4.0) (2026-08-15)
+
+
+### Features
+
+* make model classes configurable via webhooks.models ([#17](https://github.com/bambamboole/laravel-webhooks/issues/17)) ([c5168b5](https://github.com/bambamboole/laravel-webhooks/commit/c5168b5844e5ea9171dbddadc947a7cd47910333))
+
 ## [0.3.2](https://github.com/bambamboole/laravel-webhooks/compare/0.3.1...0.3.2) (2026-08-09)
 
 
